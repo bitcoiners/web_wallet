@@ -29,3 +29,41 @@ angular.module("app.directives").directive "uncapitalize", ->
     modelCtrl.$parsers.push uncapitalize
     uncapitalize scope[attrs.ngModel] # uncapitalize initial value
     return
+
+angular.module("app.directives").directive "shakeThat", [
+  "$animate"
+  ($animate) ->
+    return (
+      require: "^form"
+      scope:
+        submit: "&"
+        submitted: "="
+
+      link: (scope, element, attrs, form) ->
+        
+        # listen on submit event
+        element.on "submit", ->
+          console.log('submitting....')
+          
+          # tell angular to update scope
+          scope.$apply ->
+            
+            # everything ok -> call submit fn from controller
+            #return scope.submit()  if form.$valid
+            
+            # show error messages on submit
+            scope.submitted = true
+            
+            # shake that form
+            $animate.addClass element, "shake", ->
+              console.log('adding class')
+              #$animate.removeClass element, "shake"
+              return
+
+            return
+
+          return
+
+        return
+    )
+]

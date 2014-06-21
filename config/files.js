@@ -23,7 +23,8 @@ module.exports = function(lineman) {
 	 	    "vendor/js/ui-bootstrap-tpls.js",
 	 	    "vendor/js/ng-grid-2.0.11.debug.js",
         "vendor/js/angular-idle.js",
-        "vendor/js/angularjs-gravatardirective.js"
+        "vendor/js/angularjs-gravatardirective.js",
+        "vendor/js/angular-animate.js"
       ],
       app: [
         "app/js/app.js",
@@ -51,7 +52,8 @@ module.exports = function(lineman) {
       app: [
         //TODO: make main.css compatible with ng-grid
         "app/css/main.css",
-        "app/css/my-ng-grid.css"
+        "app/css/my-ng-grid.css",
+        "app/css/shake.css"
       ]
     }
 
