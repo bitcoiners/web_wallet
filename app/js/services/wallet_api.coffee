@@ -528,10 +528,10 @@ class WalletAPI
   # parameters: 
   #   account_name `from_account_name` - the account that will provide funds for the ask
   #   string `short_collateral` - the amount of collateral you wish to fund this short with
-  #   asset_symbol `collateral_symbol` - the type of asset collateralizing this short (i.e. XTS)
+  #   asset_symbol `collateral_symbol` - the type of asset collateralizing this short (i.e. DNS)
   #   string `interest_rate` - the APR you wish to pay interest at (0.0% to 1000.0%)
   #   asset_symbol `quote_symbol` - the asset to short sell (i.e. USD)
-  #   string `short_price_limit` - maximim price (USD per XTS) that the short will execute at, if 0 then no limit will be applied
+  #   string `short_price_limit` - maximim price (USD per DNS) that the short will execute at, if 0 then no limit will be applied
   # return_type: `transaction_record`
   market_submit_short: (from_account_name, short_collateral, collateral_symbol, interest_rate, quote_symbol, short_price_limit, error_handler = null) ->
     @rpc.request('wallet_market_submit_short', [from_account_name, short_collateral, collateral_symbol, interest_rate, quote_symbol, short_price_limit], error_handler).then (response) ->
@@ -738,7 +738,7 @@ class WalletAPI
   # publishes a price feed for BitAssets, only active delegates may do this
   # parameters: 
   #   account_name `delegate_account` - the delegate to publish the price under
-  #   real_amount `price` - the number of this asset per XTS
+  #   real_amount `price` - the number of this asset per DNS
   #   asset_symbol `asset_symbol` - the type of asset being priced
   # return_type: `transaction_record`
   publish_price_feed: (delegate_account, price, asset_symbol, error_handler = null) ->
@@ -748,7 +748,7 @@ class WalletAPI
   # publishes a set of feeds for BitAssets, only active delegates may do this
   # parameters: 
   #   account_name `delegate_account` - the delegate to publish the price under
-  #   price_map `symbol_to_price_map` - maps the BitAsset symbol to the price per BTSX
+  #   price_map `symbol_to_price_map` - maps the BitAsset symbol to the price per DNS
   # return_type: `transaction_record`
   publish_feeds: (delegate_account, symbol_to_price_map, error_handler = null) ->
     @rpc.request('wallet_publish_feeds', [delegate_account, symbol_to_price_map], error_handler).then (response) ->

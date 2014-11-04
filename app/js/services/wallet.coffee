@@ -95,7 +95,7 @@ class Wallet
     refresh_open_order_balances: (name) ->
         if !@open_orders_balances[name]
             @open_orders_balances[name] = {}
-        @open_order_balances[name]["BTSX"] = 0
+        @open_order_balances[name]["DNS"] = 0
         @wallet_api.account_order_list(name).then (result) =>
             angular.forEach result, (order) =>
                 base = @blockchain.asset_records[order.market_index.order_price.base_asset_id]
