@@ -1,25 +1,36 @@
 window.getStackTrace = ->
-    obj = {}
-    Error.captureStackTrace(obj, getStackTrace)
-    obj.stack
-
-$.fn.redraw = ->
-    $(this).each ->
-        redraw = this.offsetHeight
+    trace = printStackTrace()
+    for value, index in trace
+       if value.indexOf("getStackTrace@") >= 0
+           trace.splice(0, index) if index >= 0
+           break
+    trace.join("\n ○ ")
 
 app = angular.module("app",
-    ["ngResource", "ui.router", 'ngIdle', "app.services", "app.directives", "ngGrid", "ui.bootstrap",
-     "angularjs-gravatardirective", "ui.validate", "xeditable", "pascalprecht.translate",
-     "nvd3ChartDirectives", "pageslide-directive"])
+    ["ngResource", "ui.router", 'ngIdle', "app.services", "app.directives", "ui.bootstrap",
+     "ui.validate", "xeditable", "pascalprecht.translate", "pageslide-directive", "ui.grid"])
 
-app.run ($rootScope, $location, $idle, $state, $interval, $window, editableOptions, editableThemes) ->
+app.run ($rootScope, $location, $idle, $state, $interval, $window, $templateCache, $translate, editableOptions, editableThemes) ->
+    $templateCache.put 'ui-grid/uiGridViewport',
+        '''<div class="ui-grid-viewport">
+             <div class="ui-grid-canvas">
+               <div ng-repeat="(rowRenderIndex, row) in rowContainer.renderedRows track by row.uid" class="ui-grid-row" ng-class="row.entity.type" ng-style="containerCtrl.rowStyle(rowRenderIndex)">
+                 <div ui-grid-row="row" row-render-index="rowRenderIndex"></div>
+               </div>
+              </div>
+           </div>'''
+
     $rootScope.context_help = {locale: "en", show: false, file: "", open: false}
     app_history = []
 
     $rootScope.magic_unicorn = if magic_unicorn? then magic_unicorn else false
     $rootScope.magic_unicorn.log_message(navigator.userAgent) if $rootScope.magic_unicorn
 
-    window.navigate_to = (path) -> $location.path(path)
+    window.navigate_to = (path) ->
+        if path[0] == "/"
+            window.location.href = "/#" + path
+        else
+            $state.go(path)
 
     editableOptions.theme = 'default'
     editableThemes['default'].submitTpl = '<button type="submit" class="btn btn-sm btn-primary"><i class="fa fa-check fa-lg"></i></button>'
@@ -58,14 +69,16 @@ app.run ($rootScope, $location, $idle, $state, $interval, $window, editableOptio
     $rootScope.showContextHelp = (name) ->
         if name
             $rootScope.context_help.show = true
-            $rootScope.context_help.file = "context_help/#{$rootScope.context_help.locale}/#{name}.html"
+            $rootScope.context_help.file = "context_help/#{$translate.preferredLanguage()}/#{name}.html"
         else
             $rootScope.context_help.show = false
             $rootScope.context_help.file = ""
 
     $idle.watch()
 
-app.config ($idleProvider, $stateProvider, $urlRouterProvider, $translateProvider) ->
+app.config ($idleProvider, $stateProvider, $urlRouterProvider, $translateProvider, $tooltipProvider) ->
+
+    $tooltipProvider.options { appendToBody: true }
 
     $translateProvider.useStaticFilesLoader
         prefix: 'locale-',
@@ -127,8 +140,11 @@ app.config ($idleProvider, $stateProvider, $urlRouterProvider, $translateProvide
         controller: "DirectoryController"
 
     sp.state "directory.favorites", { url: "/favorites", views: { 'directory-favorites': { templateUrl: 'directory/favorite.html', controller: 'FavoriteController' } } }
+
     sp.state "directory.unregistered", { url: "/unregistered", views: { 'directory-unregistered': { templateUrl: 'contacts.html', controller: 'ContactsController' } } }
+
     sp.state "directory.registered", { url: "/registered?letter", views: { 'directory-registered': { templateUrl: 'directory/registered.html' } } }
+
     sp.state "directory.assets", { url: "/assets", views: { 'directory-assets': { templateUrl: 'directory/assets.html', controller: 'AssetsController' } } }
 
     sp.state "delegates",
@@ -136,15 +152,31 @@ app.config ($idleProvider, $stateProvider, $urlRouterProvider, $translateProvide
         templateUrl: "delegates/delegates.html"
         controller: "DelegatesController"
 
-    sp.state "editaccount",
-        url: "/accounts/:name/edit"
-        templateUrl: "editaccount.html"
-        controller: "EditAccountController"
+#    sp.state "editaccount",
+#        url: "/accounts/:name/edit"
+#        templateUrl: "editaccount.html"
+#        controller: "EditAccountController"
 
     sp.state "account",
         url: "/accounts/:name"
         templateUrl: "account.html"
         controller: "AccountController"
+
+    sp.state "account.transactions", { url: "/account_transactions?pending_only", views: { 'account-transactions': { templateUrl: 'account_transactions.html', controller: 'TransactionsController' } } }
+
+    sp.state "account.priceFeed", { url: "/account_delegate", views: { 'account-delegate-price-feed': { templateUrl: 'account_delegate_price_feeds.html', controller: 'AccountDelegatePriceFeeds' } } }
+
+    sp.state "account.transfer", { url: "/account_transfer?from&to&amount&memo&asset", views: { 'account-transfer': { templateUrl: 'transfer.html', controller: 'TransferController' } } }
+
+    sp.state "account.manageAssets", { url: "/account_assets", views: { 'account-manage-assets': { templateUrl: 'manage_assets.html', controller: 'ManageAssetsController' } } }
+
+    sp.state "account.keys", { url: "/account_keys", views: { 'account-keys': { templateUrl: 'account_keys.html', controller: 'AccountController' } } }
+
+    sp.state "account.updateRegAccount", { url: "/account_edit_registered", views: { 'account-update-reg-account': { templateUrl: 'update-reg-account.html', controller: 'UpdateRegAccountController' } } }
+
+    sp.state "account.editLocal", { url: "/account_edit_local", views: { 'account-editlocal': { templateUrl: 'editlocal.html', controller: 'EditLocalController' } } }
+
+    sp.state "account.vote", { url: "/account_vote", views: { 'account-vote': { templateUrl: 'account_vote.html', controller: 'AccountVoteController' } } }
 
     sp.state "asset",
         url: "/assets/:ticker"
@@ -192,9 +224,9 @@ app.config ($idleProvider, $stateProvider, $urlRouterProvider, $translateProvide
         templateUrl: "market/market.html"
         controller: "MarketController"
 
-    sp.state "market.buy", { url: "/buy", templateUrl: "market/buy.html" }  
-    sp.state "market.sell", { url: "/sell", templateUrl: "market/sell.html" }  
-    sp.state "market.short", { url: "/short", templateUrl: "market/short.html" }  
+    sp.state "market.buy", { url: "/buy", templateUrl: "market/buy.html" }
+    sp.state "market.sell", { url: "/sell", templateUrl: "market/sell.html" }
+    sp.state "market.short", { url: "/short", templateUrl: "market/short.html" }
 
     sp.state "transfer",
         url: "/transfer?from&to&amount&memo&asset"

@@ -33,29 +33,48 @@ class Blockchain
 
     asset_records: {}
     symbol2records: {}
+    asset_records_deferred: null
 
     populate_asset_record: (record) ->
-        @asset_records[record.id] = record #TODO this has extra info we don't need to cache
+        record.account_name = "MARKET" if record.issuer_account_id == -2
+        record.account_name = "GENESIS" if record.issuer_account_id == 0
+        @asset_records[record.id] = record
         @symbol2records[record.symbol] = record
         return @asset_records[record.id]
 
     refresh_asset_records: ->
-        @blockchain_api.list_assets("", -1).then (result) =>
+        return @asset_records_deferred.promise if @asset_records_deferred
+        @asset_records_deferred = deferred = @q.defer()
+        if Object.keys(@asset_records).length > 10
+            deferred.resolve(@asset_records)
+            @asset_records_deferred = null
+            return deferred.promise
+
+        promise = @blockchain_api.list_assets("", -1)
+        promise.then (result) =>
             angular.forEach result, (record) =>
                 @populate_asset_record record
+            deferred.resolve(@asset_records)
+            @asset_records_deferred = null
+        , (error) ->
+            deferred.reject(error)
+            @asset_records_deferred = null
+
+        return deferred.promise
 
     get_asset: (id) ->
         if !$.isNumeric(id)
-            console.log "Warning - calling get_asset with symbol instead of ID"
-            return @symbol2records[id]
-        if @asset_records[id]
+            record = @symbol2records[id]
+            return record if record
+
+        if $.isNumeric(id) and @asset_records[id]
             deferred = @q.defer()
             deferred.resolve(@asset_records[id])
             return deferred.promise
-        else
-            @blockchain_api.get_asset(id).then (result) =>
-                record = @populate_asset_record result
-                return record
+
+        @blockchain_api.get_asset(id).then (result) =>
+            record = @populate_asset_record result
+            return record
 
     get_markets: ->
         markets = []
@@ -167,12 +186,16 @@ class Blockchain
     populate_delegate: (record, active) ->
         record.active = active
         @all_delegates[record.name] = record
+#        record.feeds ||= []
+#        if active and record.feeds.length == 0
+#            @blockchain_api.get_feeds_from_delegate(record.name).then (result) ->
+#                record.feeds.push r.asset_symbol for r in result
         record
 
     refresh_delegates: ->
         # TODO: delegates paginator is needed
         @avg_act_del_pay_rate=0
-        @q.all({dels: @blockchain_api.list_delegates(0, 1000), config: @get_info()}).then (results) =>
+        @q.all({dels: @blockchain_api.list_delegates(0, 10000), config: @get_info()}).then (results) =>
             for i in [0 ... results.config.delegate_num]
                 @active_delegates[i] = @populate_delegate(results.dels[i], true)
                 @id_delegates[results.dels[i].id] = results.dels[i]
