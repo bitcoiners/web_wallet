@@ -182,8 +182,16 @@
       </tab>
 
       <!-- Assets tab -->
+      <!--
       <tab ui-sref="account.manageAssets" ui-sref-active="active" ng-show="account.is_my_account" >
         <tab-heading><i class="fa fa-renren fa-fw fa-lg"></i> {{ 'account.assets' | translate }}</tab-heading>
+        
+      </tab>
+      -->
+      
+      <!-- Domains tab -->      
+      <tab ui-sref="account.manageDomains" ui-sref-active="" ng-show="account.is_my_account" >
+        <tab-heading style="opacity: .5; pointer-events: none"><i class="fa fa-users fa-fw fa-lg"></i> {{ 'account.domains' | translate }}</tab-heading>      
         
       </tab>
 
